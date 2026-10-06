@@ -4,4 +4,6 @@ igraph
 pymoo>=0.6
 jenkspy
 matplotlib
-pulp
+pulp<3
+highspy
+scipy
