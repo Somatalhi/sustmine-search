@@ -1,0 +1,7 @@
+numpy
+pandas
+igraph
+pymoo>=0.6
+jenkspy
+matplotlib
+pulp
