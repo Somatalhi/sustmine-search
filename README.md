@@ -31,3 +31,10 @@ run on bench-phase units with pushback precedence.
 * `params.py` — all case-study parameters in one place
 
 ## Install
+
+PuLP must be version 2.x (`pulp<3`); the scheduler uses its original API.
+
+## On the cluster
+
+Only `blocks_small.csv` needs to travel; steps 1–2 regenerate everything else.
+Each `run_exp1_mip.py` call is independent and can be submitted as one job.
