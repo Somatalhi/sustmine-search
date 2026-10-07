@@ -14,6 +14,7 @@ from pymoo.core.population import Population
 from pymoo.algorithms.moo.nsga2 import RankAndCrowding
 from pymoo.algorithms.moo.nsga3 import ReferenceDirectionSurvival
 from pymoo.util.ref_dirs import get_reference_directions
+from sustmine_search.ranking import sustmine_rank
 
 ap = argparse.ArgumentParser(); ap.add_argument("--in", dest="IN", default="results/exp1_mip_500")
 IN = ap.parse_args().IN
@@ -86,7 +87,15 @@ for (treat, seed), F in runs.items():
     Fn = norm(F)
     rows.append(dict(treatment=treat, seed=seed, n=len(F), HV=hv(Fn), IGDp=igdp(Fn),
                      spacing=spacing(Fn), spread=spread(Fn)))
-    if treat == "lhs":                          # matched-cardinality LHS: each algorithm's own survival
+    if treat == "lhs":
+        # SustMine paradigm: hierarchical Pareto ranking of the sample, keep Front 1
+        # (ranking runs on raw F; dims: eco=[NPV], env=[waste, land], soc=[employees, job security])
+        _, _, _, comp = sustmine_rank(F, [], [0], [1, 2], [3, 4])
+        sm = Fn[comp == 1]
+        matched[(seed, "sustmine")] = sm
+        rows.append(dict(treatment="sustmine", seed=seed, n=len(sm), HV=hv(sm), IGDp=igdp(sm),
+                         spacing=spacing(sm), spread=spread(sm)))
+        # matched-cardinality controls: the sample truncated by each algorithm's own survival
         for k, how, tag in [(100, "nsga2", "lhs100"), (126, "nsga3", "lhs126")]:
             sub = truncate(Fn, k, how)
             matched[(seed, tag)] = sub
@@ -131,7 +140,7 @@ cov = []
 seeds = sorted({sd for _, sd in runs})
 for seed in seeds:
     sets = {t: norm(runs[(t, seed)]) for t in treats if (t, seed) in runs}
-    for tag in ["lhs100", "lhs126"]:
+    for tag in ["sustmine", "lhs100", "lhs126"]:
         if (seed, tag) in matched: sets[tag] = matched[(seed, tag)]
     for a, b in itertools.permutations(sets, 2):
         cov.append(dict(seed=seed, A=a, B=b, C=coverage(sets[a], sets[b])))
@@ -139,3 +148,4 @@ Cv = pd.DataFrame(cov).groupby(["A", "B"]).C.median().unstack()
 Cv.to_csv(f"{IN}/coverage.csv")
 print("\nset coverage C(A,B): median over seeds of the fraction of B dominated by A (rows = A)")
 print(Cv.to_string(float_format=lambda v: f"{v:.2f}"))
+
