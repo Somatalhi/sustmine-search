@@ -31,7 +31,7 @@ def main():
     ap.add_argument("--time_limit", type=int, default=60)
     a = ap.parse_args()
 
-    out_dir = f"results/exp1_mip_{a.budget}"
+    out_dir = f"results/exp1_cpit_{a.budget}"
     os.makedirs(out_dir, exist_ok=True)
     out_path = f"{out_dir}/{a.algo}_seed{a.seed}.npz"
     if os.path.exists(out_path):
